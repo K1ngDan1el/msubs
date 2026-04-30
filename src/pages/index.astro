@@ -58,6 +58,17 @@ import '../styles/global.css';
         </div>
       </div>
 
+      <!-- Canceladas (se muestra solo si hay alguna) -->
+      <div class="card" id="cancelledCard" style="margin-top:1rem; display:none;">
+        <div class="card-header" style="cursor:pointer;" onclick="toggleCancelled()">
+          <span class="card-title">Canceladas</span>
+          <span class="badge-count" id="cancelledCount" style="background:var(--muted);">0</span>
+        </div>
+        <div class="card-body" id="cancelledBody" style="display:none;">
+          <ul class="sub-list" id="cancelledList"></ul>
+        </div>
+      </div>
+
       <!-- Charts row -->
       <div class="charts-row">
         <div class="card">
@@ -75,7 +86,7 @@ import '../styles/global.css';
       </div>
 
       <div class="edit-hint">
-        <strong>Editar suscripciones:</strong> Busca la sección <strong>const SUBSCRIPTIONS</strong> al inicio del script en este mismo archivo. Puedes agregar, eliminar o editar cualquier campo (nombre, precio, ciclo, categoría, fecha de cobro, emoji).
+        <strong>Editar suscripciones:</strong> Busca <strong>const SUBSCRIPTIONS</strong> en el script. Usa <strong>billingDay</strong> para el día de cobro mensual — se recalcula solo cada mes. Para cancelar sin borrar agrega <strong>cancelled: true</strong>.
       </div>
     </div>
 
@@ -102,44 +113,69 @@ import '../styles/global.css';
 /* ============================================================
    EDITA AQUÍ TUS SUSCRIPCIONES
    Campos:
-     name     — Nombre del servicio
-     price    — Precio en tu moneda local
-     cycle    — "mensual" o "anual"
-     category — Categoría libre (para filtros y dona)
-     nextDate — Próxima fecha de cobro "YYYY-MM-DD"
-     emoji    — Ícono visual (un emoji)
-     color    — Color de fondo del ícono (cualquier CSS)
+     name       — Nombre del servicio
+     price      — Precio en tu moneda local
+     cycle      — "mensual" o "anual"
+     category   — Categoría libre (para filtros y dona)
+     billingDay — Día del mes en que te cobran (1-31)
+                  Se recalcula automáticamente cada mes.
+     emoji      — Ícono visual (un emoji)
+     color      — Color del servicio en hex
+     cancelled  — (opcional) true para marcar como cancelada
 ============================================================ */
 // ─────────────────────────────────────────────────────────────
-//  PARA AGREGAR UNA SUSCRIPCIÓN, copia este bloque y pégalo
-//  dentro del arreglo, separado por una coma:
+//  PARA AGREGAR, copia este bloque y pégalo separado por coma:
 //
-//  { name: "Nombre del servicio",
-//    price: 000,            ← precio exacto que pagas (número)
-//    cycle: "mensual",      ← "mensual" o "anual"
-//    category: "Streaming", ← categoría libre, la que quieras
-//    nextDate: "2025-08-01",← próxima fecha de cobro YYYY-MM-DD
-//    emoji: "🎵",           ← cualquier emoji como ícono
-//    color: "#ff0000" },    ← color hex del servicio
+//  { name: "Nombre", price: 000, cycle: "mensual",
+//    category: "Streaming", billingDay: 15,
+//    emoji: "🎵", color: "#ff0000" },
 //
-//  Ejemplo real:
-//  { name: "Spotify", price: 99, cycle: "mensual",
-//    category: "Música", nextDate: "2025-08-15",
-//    emoji: "🎵", color: "#1db954" },
+//  Para cancelar sin borrar:
+//  { ..., cancelled: true },
 // ─────────────────────────────────────────────────────────────
 const SUBSCRIPTIONS = [
-  { name: "Netflix",        price: 299, cycle: "mensual", category: "Streaming", nextDate: "2026-08-05", emoji: "🎬", color: "#e60914" },
-  { name: "YouTube Premium",price: 149, cycle: "mensual", category: "Streaming", nextDate: "2026-08-03", emoji: "▶️", color: "#ff0000" },
+  { name: "Netflix",         price: 299, cycle: "mensual", category: "Streaming", billingDay: 29, emoji: "🎬", color: "#e60914" },
+  { name: "YouTube Premium", price: 149, cycle: "mensual", category: "Streaming", billingDay: 30,  emoji: "▶️", color: "#ff0000" },
+  // Ejemplo de cancelada (descomenta para probar):
+  // { name: "Disney+", price: 199, cycle: "mensual", category: "Streaming", billingDay: 15, emoji: "🏰", color: "#1139a8", cancelled: true },
 ];
 
 /* Presupuesto mensual objetivo (para la barra) */
 const BUDGET_MONTHLY = 3000;
 
 /* ============================================================
-   APP — Lógica de renderizado
+   LÓGICA
 ============================================================ */
 const today = new Date();
-today.setHours(0,0,0,0);
+today.setHours(0, 0, 0, 0);
+
+/**
+ * Calcula la próxima fecha de cobro dado un día del mes.
+ * Si ese día ya pasó este mes → salta al siguiente.
+ * Maneja meses cortos (ej: día 31 en febrero → último día del mes).
+ */
+function getNextBillingDate(billingDay) {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  function clampDay(day, year, month) {
+    return Math.min(day, new Date(year, month + 1, 0).getDate());
+  }
+
+  let year  = now.getFullYear();
+  let month = now.getMonth();
+  let day   = clampDay(billingDay, year, month);
+  let candidate = new Date(year, month, day);
+
+  if (candidate < now) {
+    month += 1;
+    if (month > 11) { month = 0; year += 1; }
+    day = clampDay(billingDay, year, month);
+    candidate = new Date(year, month, day);
+  }
+
+  return candidate;
+}
 
 function daysBetween(d1, d2) {
   return Math.round((d2 - d1) / 86400000);
@@ -158,40 +194,54 @@ function formatMXN(n) {
 }
 
 function daysColor(d) {
-  if (d <= 5) return "soon";
+  if (d <= 5)  return "soon";
   if (d <= 15) return "mid";
   return "ok";
 }
 
+/* Mapa explícito nombre → clase CSS de logo */
+const LOGO_MAP = {
+  "netflix":         "logo-netflix",
+  "youtube premium": "logo-youtube",
+  "spotify":         "logo-spotify",
+  "disney+":         "logo-disney",
+  "amazon prime":    "logo-prime",
+  "hbo":             "logo-hbo",
+  "apple tv+":       "logo-apple",
+};
+
 let activeCategory = "Todas";
+let cancelledOpen  = false;
 let chartBar, chartDonut, chartYear;
 
+const activeSubs    = () => SUBSCRIPTIONS.filter(s => !s.cancelled);
+const cancelledSubs = () => SUBSCRIPTIONS.filter(s =>  s.cancelled);
+
 function getCategories() {
-  const cats = ["Todas", ...new Set(SUBSCRIPTIONS.map(s => s.category))];
-  return cats;
+  return ["Todas", ...new Set(activeSubs().map(s => s.category))];
 }
 
 function filteredSubs() {
-  if (activeCategory === "Todas") return SUBSCRIPTIONS;
-  return SUBSCRIPTIONS.filter(s => s.category === activeCategory);
+  const subs = activeSubs();
+  return activeCategory === "Todas" ? subs : subs.filter(s => s.category === activeCategory);
 }
 
+/* ── Stats bar ── */
 function renderStats() {
-  const subs = SUBSCRIPTIONS;
-  const totalMonthly = subs.reduce((a, s) => a + monthlyEquivalent(s), 0);
-  const totalAnnual = subs.reduce((a, s) => a + annualEquivalent(s), 0);
+  const subs = activeSubs();
+  const totalMonthly  = subs.reduce((a, s) => a + monthlyEquivalent(s), 0);
+  const totalAnnual   = subs.reduce((a, s) => a + annualEquivalent(s), 0);
   const mostExpensive = [...subs].sort((a, b) => monthlyEquivalent(b) - monthlyEquivalent(a))[0];
-  const upcoming = [...subs]
-    .map(s => ({ ...s, d: daysBetween(today, new Date(s.nextDate)) }))
-    .filter(s => s.d >= 0)
-    .sort((a, b) => a.d - b.d)[0];
+
+  const withDays = subs.map(s => ({ ...s, next: getNextBillingDate(s.billingDay) }));
+  const upcoming = [...withDays].sort((a, b) => a.next - b.next)[0];
 
   const stats = [
-    { label: "Gasto mensual",    val: formatMXN(totalMonthly), sub: "equivalente mensual", cls: "accent" },
-    { label: "Gasto anual",      val: formatMXN(totalAnnual),  sub: "proyección 12 meses",  cls: "red" },
-    { label: "Suscripciones",    val: subs.length,             sub: "activas ahora",        cls: "green" },
-    { label: "La más cara",      val: mostExpensive ? mostExpensive.name : "—", sub: mostExpensive ? formatMXN(monthlyEquivalent(mostExpensive)) + "/mes" : "", cls: "warn" },
-    { label: "Próximo cobro",    val: upcoming ? upcoming.name : "—", sub: upcoming ? `en ${upcoming.d} días` : "", cls: "accent" },
+    { label: "Gasto mensual",  val: formatMXN(totalMonthly),      sub: "equivalente mensual",  cls: "accent" },
+    { label: "Gasto anual",    val: formatMXN(totalAnnual),        sub: "proyección 12 meses",  cls: "red"    },
+    { label: "Suscripciones",  val: subs.length,                   sub: "activas ahora",        cls: "green"  },
+    { label: "La más cara",    val: mostExpensive?.name ?? "—",    sub: mostExpensive ? formatMXN(monthlyEquivalent(mostExpensive)) + "/mes" : "", cls: "warn" },
+    { label: "Próximo cobro",  val: upcoming?.name ?? "—",         sub: upcoming ? `en ${daysBetween(today, upcoming.next)} días` : "", cls: "accent" },
   ];
 
   document.getElementById("statsBar").innerHTML = stats.map(s =>
@@ -203,80 +253,117 @@ function renderStats() {
   ).join("");
 }
 
+/* ── Category pills ── */
 function renderCatPills() {
-  const cats = getCategories();
-  document.getElementById("catPills").innerHTML = cats.map(c =>
+  document.getElementById("catPills").innerHTML = getCategories().map(c =>
     `<button class="cat-pill ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c}')">${c}</button>`
   ).join("");
 }
 
-function setCategory(cat) {
+window.setCategory = function(cat) {
   activeCategory = cat;
   renderCatPills();
   renderSubList();
   renderCharts();
-}
+};
 
+/* ── Sub list ── */
 function renderSubList() {
   const subs = filteredSubs();
   document.getElementById("subCount").textContent = subs.length;
 
-  // Budget
   const totalMonthly = subs.reduce((a, s) => a + monthlyEquivalent(s), 0);
   const pct = Math.min(100, Math.round(totalMonthly / BUDGET_MONTHLY * 100));
   document.getElementById("budgetPct").textContent = pct + "%";
   document.getElementById("budgetFill").style.width = pct + "%";
 
   document.getElementById("subList").innerHTML = subs.map((s, i) => {
-    const next = new Date(s.nextDate);
+    const next = getNextBillingDate(s.billingDay);
     const days = daysBetween(today, next);
-    const dc = daysColor(days);
-    const logoClass = "logo-" + s.name.toLowerCase().replace(/\s+/g, "-");
+    const dc   = daysColor(days);
+    const logoClass = LOGO_MAP[s.name.toLowerCase()] ?? "logo-default";
+
     return `
     <li class="sub-item" style="animation-delay:${i * 0.04}s">
       <div class="sub-icon logo-icon ${logoClass}"></div>
       <div>
         <div class="sub-name">${s.name}</div>
-        <div class="sub-meta">${s.category}</div>
+        <div class="sub-meta">${s.category} · día ${s.billingDay}</div>
       </div>
       <div style="text-align:right">
         <div class="sub-price">${formatMXN(s.price)}</div>
         <div class="sub-cycle cycle-${s.cycle}">${s.cycle}</div>
       </div>
       <div class="sub-next" style="min-width:52px">
-        <div class="days ${dc}">${days >= 0 ? days + "d" : "vence"}</div>
+        <div class="days ${dc}">${days}d</div>
         <div style="color:var(--muted); font-size:10px;">${next.toLocaleDateString("es-MX",{day:"2-digit",month:"short"})}</div>
       </div>
     </li>`;
   }).join("");
 }
 
+/* ── Canceladas ── */
+function renderCancelled() {
+  const cancelled = cancelledSubs();
+  const card  = document.getElementById("cancelledCard");
+  const list  = document.getElementById("cancelledList");
+  const count = document.getElementById("cancelledCount");
+
+  if (cancelled.length === 0) { card.style.display = "none"; return; }
+
+  card.style.display = "block";
+  count.textContent  = cancelled.length;
+
+  list.innerHTML = cancelled.map((s, i) => {
+    const logoClass = LOGO_MAP[s.name.toLowerCase()] ?? "logo-default";
+    return `
+    <li class="sub-item" style="animation-delay:${i * 0.04}s; opacity:0.45; filter:grayscale(1);">
+      <div class="sub-icon logo-icon ${logoClass}"></div>
+      <div>
+        <div class="sub-name" style="text-decoration:line-through;">${s.name}</div>
+        <div class="sub-meta">${s.category} · cancelada</div>
+      </div>
+      <div style="text-align:right">
+        <div class="sub-price" style="color:var(--muted);">${formatMXN(s.price)}</div>
+        <div class="sub-cycle" style="background:rgba(107,107,138,0.15);color:var(--muted);">${s.cycle}</div>
+      </div>
+      <div class="sub-next" style="min-width:52px; color:var(--muted); font-size:11px; text-align:right;">—</div>
+    </li>`;
+  }).join("");
+}
+
+window.toggleCancelled = function() {
+  cancelledOpen = !cancelledOpen;
+  document.getElementById("cancelledBody").style.display = cancelledOpen ? "block" : "none";
+};
+
+/* ── Timeline ── */
 function renderTimeline() {
-  const sorted = [...SUBSCRIPTIONS]
-    .map(s => ({ ...s, next: new Date(s.nextDate) }))
+  const sorted = activeSubs()
+    .map(s => ({ ...s, next: getNextBillingDate(s.billingDay) }))
     .sort((a, b) => a.next - b.next)
     .slice(0, 8);
 
   document.getElementById("timeline").innerHTML = sorted.map(s => {
     const days = daysBetween(today, s.next);
-    const dc = daysColor(days);
+    const dc   = daysColor(days);
     return `<li class="tl-item">
       <div class="tl-dot" style="background:${s.color}; box-shadow:0 0 6px ${s.color}66;"></div>
       <div class="tl-text">
         <div class="tl-name">${s.name}</div>
-        <div class="tl-date">${s.next.toLocaleDateString("es-MX",{weekday:"short",day:"numeric",month:"short"})} · <span class="${dc}">${days >= 0 ? "en " + days + " días" : "vencido"}</span></div>
+        <div class="tl-date">${s.next.toLocaleDateString("es-MX",{weekday:"short",day:"numeric",month:"short"})} · <span class="${dc}">en ${days} días</span></div>
       </div>
       <div class="tl-amt">${formatMXN(s.price)}</div>
     </li>`;
   }).join("");
 }
 
+/* ── Charts ── */
 function renderCharts() {
   const subs = filteredSubs();
 
-  // Bar chart — monthly per sub
   const barLabels = subs.map(s => s.name);
-  const barData = subs.map(s => Math.round(monthlyEquivalent(s)));
+  const barData   = subs.map(s => Math.round(monthlyEquivalent(s)));
   const barColors = subs.map(s => s.color + "cc");
 
   if (chartBar) chartBar.destroy();
@@ -285,20 +372,15 @@ function renderCharts() {
     data: {
       labels: barLabels,
       datasets: [{
-        label: "Mensual",
-        data: barData,
+        label: "Mensual", data: barData,
         backgroundColor: barColors,
         borderColor: barColors.map(c => c.slice(0,7)),
-        borderWidth: 1,
-        borderRadius: 6,
-        borderSkipped: false,
+        borderWidth: 1, borderRadius: 6, borderSkipped: false,
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => formatMXN(ctx.raw) + "/mes" }
-      }},
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => formatMXN(ctx.raw) + "/mes" } } },
       scales: {
         x: { ticks: { color: "#6b6b8a", font: { size: 10, family: "'DM Mono'" }, maxRotation: 45, autoSkip: false }, grid: { display: false }, border: { color: "rgba(255,255,255,0.07)" } },
         y: { ticks: { color: "#6b6b8a", font: { size: 10 }, callback: v => "$" + v.toLocaleString("es-MX") }, grid: { color: "rgba(255,255,255,0.05)" }, border: { display: false } }
@@ -306,11 +388,8 @@ function renderCharts() {
     }
   });
 
-  // Donut — by category
   const catTotals = {};
-  subs.forEach(s => {
-    catTotals[s.category] = (catTotals[s.category] || 0) + monthlyEquivalent(s);
-  });
+  subs.forEach(s => { catTotals[s.category] = (catTotals[s.category] || 0) + monthlyEquivalent(s); });
   const catColors = ["#7c5cfc","#43e8c8","#fc5c7d","#ffb347","#4fc3f7","#aed581","#f48fb1","#ce93d8","#80cbc4"];
 
   if (chartDonut) chartDonut.destroy();
@@ -318,17 +397,10 @@ function renderCharts() {
     type: "doughnut",
     data: {
       labels: Object.keys(catTotals),
-      datasets: [{
-        data: Object.values(catTotals).map(v => Math.round(v)),
-        backgroundColor: catColors,
-        borderColor: "#111118",
-        borderWidth: 3,
-        hoverOffset: 8,
-      }]
+      datasets: [{ data: Object.values(catTotals).map(v => Math.round(v)), backgroundColor: catColors, borderColor: "#111118", borderWidth: 3, hoverOffset: 8 }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      cutout: "68%",
+      responsive: true, maintainAspectRatio: false, cutout: "68%",
       plugins: {
         legend: { position: "right", labels: { color: "#6b6b8a", font: { size: 10, family: "'DM Mono'" }, boxWidth: 10, padding: 10 } },
         tooltip: { callbacks: { label: ctx => ctx.label + ": " + formatMXN(ctx.raw) + "/mes" } }
@@ -336,9 +408,8 @@ function renderCharts() {
     }
   });
 
-  // Year projection line
-  const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  const yearData = months.map(() => Math.round(SUBSCRIPTIONS.reduce((a, s) => a + monthlyEquivalent(s), 0)));
+  const months   = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const yearData = months.map(() => Math.round(activeSubs().reduce((a, s) => a + monthlyEquivalent(s), 0)));
 
   if (chartYear) chartYear.destroy();
   chartYear = new Chart(document.getElementById("chartYear"), {
@@ -346,16 +417,10 @@ function renderCharts() {
     data: {
       labels: months,
       datasets: [{
-        label: "Proyección",
-        data: yearData,
-        borderColor: "#7c5cfc",
-        backgroundColor: "rgba(124,92,252,0.12)",
-        borderWidth: 2,
-        pointBackgroundColor: "#b48aff",
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        tension: 0.4,
-        fill: true,
+        label: "Proyección", data: yearData,
+        borderColor: "#7c5cfc", backgroundColor: "rgba(124,92,252,0.12)",
+        borderWidth: 2, pointBackgroundColor: "#b48aff",
+        pointRadius: 4, pointHoverRadius: 6, tension: 0.4, fill: true,
       }]
     },
     options: {
@@ -370,15 +435,15 @@ function renderCharts() {
 }
 
 function renderLastUpdate() {
-  const d = new Date();
   document.getElementById("lastUpdate").textContent =
-    "actualizado " + d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+    "actualizado " + new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
 }
 
 function init() {
   renderStats();
   renderCatPills();
   renderSubList();
+  renderCancelled();
   renderTimeline();
   renderCharts();
   renderLastUpdate();
