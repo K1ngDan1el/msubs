@@ -1,11 +1,390 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import '../styles/global.css';
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mis Suscripciones</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+<body>
+
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<div class="container">
+
+  <header>
+    <div>
+      <div class="logo">sub<span>/</span>track</div>
+      <div class="tagline">panel de suscripciones</div>
+    </div>
+    <div style="text-align:right; color: var(--muted); font-size:11px;" id="lastUpdate"></div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats" id="statsBar"></div>
+
+  <!-- Main grid -->
+  <div class="grid">
+    <!-- Left: subscription list -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Activas</span>
+          <span class="badge-count" id="subCount">0</span>
+        </div>
+
+        <!-- Filter pills -->
+        <div class="cats" id="catPills"></div>
+
+        <!-- Budget bar -->
+        <div style="padding: 0.75rem 1.25rem 0;">
+          <div class="budget-bar-wrap">
+            <div class="budget-label">
+              <span>Presupuesto mensual</span>
+              <span id="budgetPct">0%</span>
+            </div>
+            <div class="budget-bar"><div class="budget-fill" id="budgetFill" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="card-body" style="padding-top: 0.5rem;">
+          <ul class="sub-list" id="subList"></ul>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Gasto mensual</span></div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:220px;"><canvas id="chartBar" role="img" aria-label="Gasto mensual por suscripción en barras">Gráfica de gastos mensuales</canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Por categoría</span></div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:220px;"><canvas id="chartDonut" role="img" aria-label="Distribución por categoría en dona">Gráfica de categorías</canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-hint">
+        <strong>Editar suscripciones:</strong> Busca la sección <strong>const SUBSCRIPTIONS</strong> al inicio del script en este mismo archivo. Puedes agregar, eliminar o editar cualquier campo (nombre, precio, ciclo, categoría, fecha de cobro, emoji).
+      </div>
+    </div>
+
+    <!-- Right: upcoming + year chart -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Próximos cobros</span></div>
+        <div class="card-body">
+          <ul class="timeline" id="timeline"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Proyección anual</span></div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:200px;"><canvas id="chartYear" role="img" aria-label="Proyección de gastos mes a mes">Proyección anual</canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+/* ============================================================
+   EDITA AQUÍ TUS SUSCRIPCIONES
+   Campos:
+     name     — Nombre del servicio
+     price    — Precio en tu moneda local
+     cycle    — "mensual" o "anual"
+     category — Categoría libre (para filtros y dona)
+     nextDate — Próxima fecha de cobro "YYYY-MM-DD"
+     emoji    — Ícono visual (un emoji)
+     color    — Color de fondo del ícono (cualquier CSS)
+============================================================ */
+// ─────────────────────────────────────────────────────────────
+//  PARA AGREGAR UNA SUSCRIPCIÓN, copia este bloque y pégalo
+//  dentro del arreglo, separado por una coma:
+//
+//  { name: "Nombre del servicio",
+//    price: 000,            ← precio exacto que pagas (número)
+//    cycle: "mensual",      ← "mensual" o "anual"
+//    category: "Streaming", ← categoría libre, la que quieras
+//    nextDate: "2025-08-01",← próxima fecha de cobro YYYY-MM-DD
+//    emoji: "🎵",           ← cualquier emoji como ícono
+//    color: "#ff0000" },    ← color hex del servicio
+//
+//  Ejemplo real:
+//  { name: "Spotify", price: 99, cycle: "mensual",
+//    category: "Música", nextDate: "2025-08-15",
+//    emoji: "🎵", color: "#1db954" },
+// ─────────────────────────────────────────────────────────────
+const SUBSCRIPTIONS = [
+  { name: "Netflix",        price: 299, cycle: "mensual", category: "Streaming", nextDate: "2026-08-05", emoji: "🎬", color: "#e60914" },
+  { name: "YouTube Premium",price: 149, cycle: "mensual", category: "Streaming", nextDate: "2026-08-03", emoji: "▶️", color: "#ff0000" },
+];
+
+/* Presupuesto mensual objetivo (para la barra) */
+const BUDGET_MONTHLY = 3000;
+
+/* ============================================================
+   APP — Lógica de renderizado
+============================================================ */
+const today = new Date();
+today.setHours(0,0,0,0);
+
+function daysBetween(d1, d2) {
+  return Math.round((d2 - d1) / 86400000);
+}
+
+function monthlyEquivalent(sub) {
+  return sub.cycle === "mensual" ? sub.price : sub.price / 12;
+}
+
+function annualEquivalent(sub) {
+  return sub.cycle === "anual" ? sub.price : sub.price * 12;
+}
+
+function formatMXN(n) {
+  return "$" + Math.round(n).toLocaleString("es-MX");
+}
+
+function daysColor(d) {
+  if (d <= 5) return "soon";
+  if (d <= 15) return "mid";
+  return "ok";
+}
+
+let activeCategory = "Todas";
+let chartBar, chartDonut, chartYear;
+
+function getCategories() {
+  const cats = ["Todas", ...new Set(SUBSCRIPTIONS.map(s => s.category))];
+  return cats;
+}
+
+function filteredSubs() {
+  if (activeCategory === "Todas") return SUBSCRIPTIONS;
+  return SUBSCRIPTIONS.filter(s => s.category === activeCategory);
+}
+
+function renderStats() {
+  const subs = SUBSCRIPTIONS;
+  const totalMonthly = subs.reduce((a, s) => a + monthlyEquivalent(s), 0);
+  const totalAnnual = subs.reduce((a, s) => a + annualEquivalent(s), 0);
+  const mostExpensive = [...subs].sort((a, b) => monthlyEquivalent(b) - monthlyEquivalent(a))[0];
+  const upcoming = [...subs]
+    .map(s => ({ ...s, d: daysBetween(today, new Date(s.nextDate)) }))
+    .filter(s => s.d >= 0)
+    .sort((a, b) => a.d - b.d)[0];
+
+  const stats = [
+    { label: "Gasto mensual",    val: formatMXN(totalMonthly), sub: "equivalente mensual", cls: "accent" },
+    { label: "Gasto anual",      val: formatMXN(totalAnnual),  sub: "proyección 12 meses",  cls: "red" },
+    { label: "Suscripciones",    val: subs.length,             sub: "activas ahora",        cls: "green" },
+    { label: "La más cara",      val: mostExpensive ? mostExpensive.name : "—", sub: mostExpensive ? formatMXN(monthlyEquivalent(mostExpensive)) + "/mes" : "", cls: "warn" },
+    { label: "Próximo cobro",    val: upcoming ? upcoming.name : "—", sub: upcoming ? `en ${upcoming.d} días` : "", cls: "accent" },
+  ];
+
+  document.getElementById("statsBar").innerHTML = stats.map(s =>
+    `<div class="stat">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-val ${s.cls}">${s.val}</div>
+      <div class="stat-sub">${s.sub}</div>
+    </div>`
+  ).join("");
+}
+
+function renderCatPills() {
+  const cats = getCategories();
+  document.getElementById("catPills").innerHTML = cats.map(c =>
+    `<button class="cat-pill ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c}')">${c}</button>`
+  ).join("");
+}
+
+function setCategory(cat) {
+  activeCategory = cat;
+  renderCatPills();
+  renderSubList();
+  renderCharts();
+}
+
+function renderSubList() {
+  const subs = filteredSubs();
+  document.getElementById("subCount").textContent = subs.length;
+
+  // Budget
+  const totalMonthly = subs.reduce((a, s) => a + monthlyEquivalent(s), 0);
+  const pct = Math.min(100, Math.round(totalMonthly / BUDGET_MONTHLY * 100));
+  document.getElementById("budgetPct").textContent = pct + "%";
+  document.getElementById("budgetFill").style.width = pct + "%";
+
+  document.getElementById("subList").innerHTML = subs.map((s, i) => {
+    const next = new Date(s.nextDate);
+    const days = daysBetween(today, next);
+    const dc = daysColor(days);
+    const logoClass = "logo-" + s.name.toLowerCase().replace(/\s+/g, "-");
+    return `
+    <li class="sub-item" style="animation-delay:${i * 0.04}s">
+      <div class="sub-icon logo-icon ${logoClass}"></div>
+      <div>
+        <div class="sub-name">${s.name}</div>
+        <div class="sub-meta">${s.category}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="sub-price">${formatMXN(s.price)}</div>
+        <div class="sub-cycle cycle-${s.cycle}">${s.cycle}</div>
+      </div>
+      <div class="sub-next" style="min-width:52px">
+        <div class="days ${dc}">${days >= 0 ? days + "d" : "vence"}</div>
+        <div style="color:var(--muted); font-size:10px;">${next.toLocaleDateString("es-MX",{day:"2-digit",month:"short"})}</div>
+      </div>
+    </li>`;
+  }).join("");
+}
+
+function renderTimeline() {
+  const sorted = [...SUBSCRIPTIONS]
+    .map(s => ({ ...s, next: new Date(s.nextDate) }))
+    .sort((a, b) => a.next - b.next)
+    .slice(0, 8);
+
+  document.getElementById("timeline").innerHTML = sorted.map(s => {
+    const days = daysBetween(today, s.next);
+    const dc = daysColor(days);
+    return `<li class="tl-item">
+      <div class="tl-dot" style="background:${s.color}; box-shadow:0 0 6px ${s.color}66;"></div>
+      <div class="tl-text">
+        <div class="tl-name">${s.name}</div>
+        <div class="tl-date">${s.next.toLocaleDateString("es-MX",{weekday:"short",day:"numeric",month:"short"})} · <span class="${dc}">${days >= 0 ? "en " + days + " días" : "vencido"}</span></div>
+      </div>
+      <div class="tl-amt">${formatMXN(s.price)}</div>
+    </li>`;
+  }).join("");
+}
+
+function renderCharts() {
+  const subs = filteredSubs();
+
+  // Bar chart — monthly per sub
+  const barLabels = subs.map(s => s.name);
+  const barData = subs.map(s => Math.round(monthlyEquivalent(s)));
+  const barColors = subs.map(s => s.color + "cc");
+
+  if (chartBar) chartBar.destroy();
+  chartBar = new Chart(document.getElementById("chartBar"), {
+    type: "bar",
+    data: {
+      labels: barLabels,
+      datasets: [{
+        label: "Mensual",
+        data: barData,
+        backgroundColor: barColors,
+        borderColor: barColors.map(c => c.slice(0,7)),
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => formatMXN(ctx.raw) + "/mes" }
+      }},
+      scales: {
+        x: { ticks: { color: "#6b6b8a", font: { size: 10, family: "'DM Mono'" }, maxRotation: 45, autoSkip: false }, grid: { display: false }, border: { color: "rgba(255,255,255,0.07)" } },
+        y: { ticks: { color: "#6b6b8a", font: { size: 10 }, callback: v => "$" + v.toLocaleString("es-MX") }, grid: { color: "rgba(255,255,255,0.05)" }, border: { display: false } }
+      }
+    }
+  });
+
+  // Donut — by category
+  const catTotals = {};
+  subs.forEach(s => {
+    catTotals[s.category] = (catTotals[s.category] || 0) + monthlyEquivalent(s);
+  });
+  const catColors = ["#7c5cfc","#43e8c8","#fc5c7d","#ffb347","#4fc3f7","#aed581","#f48fb1","#ce93d8","#80cbc4"];
+
+  if (chartDonut) chartDonut.destroy();
+  chartDonut = new Chart(document.getElementById("chartDonut"), {
+    type: "doughnut",
+    data: {
+      labels: Object.keys(catTotals),
+      datasets: [{
+        data: Object.values(catTotals).map(v => Math.round(v)),
+        backgroundColor: catColors,
+        borderColor: "#111118",
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: "68%",
+      plugins: {
+        legend: { position: "right", labels: { color: "#6b6b8a", font: { size: 10, family: "'DM Mono'" }, boxWidth: 10, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => ctx.label + ": " + formatMXN(ctx.raw) + "/mes" } }
+      }
+    }
+  });
+
+  // Year projection line
+  const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const yearData = months.map(() => Math.round(SUBSCRIPTIONS.reduce((a, s) => a + monthlyEquivalent(s), 0)));
+
+  if (chartYear) chartYear.destroy();
+  chartYear = new Chart(document.getElementById("chartYear"), {
+    type: "line",
+    data: {
+      labels: months,
+      datasets: [{
+        label: "Proyección",
+        data: yearData,
+        borderColor: "#7c5cfc",
+        backgroundColor: "rgba(124,92,252,0.12)",
+        borderWidth: 2,
+        pointBackgroundColor: "#b48aff",
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => formatMXN(ctx.raw) } } },
+      scales: {
+        x: { ticks: { color: "#6b6b8a", font: { size: 10 } }, grid: { display: false }, border: { color: "rgba(255,255,255,0.07)" } },
+        y: { ticks: { color: "#6b6b8a", font: { size: 10 }, callback: v => "$" + v.toLocaleString("es-MX") }, grid: { color: "rgba(255,255,255,0.05)" }, border: { display: false } }
+      }
+    }
+  });
+}
+
+function renderLastUpdate() {
+  const d = new Date();
+  document.getElementById("lastUpdate").textContent =
+    "actualizado " + d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+}
+
+function init() {
+  renderStats();
+  renderCatPills();
+  renderSubList();
+  renderTimeline();
+  renderCharts();
+  renderLastUpdate();
+}
+
+init();
+</script>
+</body>
+</html>
