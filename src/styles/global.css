@@ -153,25 +153,61 @@ header {
 /* Hero / Total Wallet Card */
 .hero-card {
   background: var(--surface);
-  border: 1px solid var(--border-light);
   border-radius: 24px;
   padding: 2.2rem 1.5rem;
   text-align: center;
   position: relative;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Sin border nativo — el contorno animado lo reemplaza */
+  border: none;
+  z-index: 0;
 }
 .hero-card:active {
   transform: scale(0.99);
-  border-color: var(--accent-light);
 }
+
+/* Contorno animado giratorio — conic-gradient */
 .hero-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; height: 4px;
-  background: var(--accent-gradient);
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: 26px; /* 24px + 2px del offset */
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    #5f5cef,
+    #06b6d4,
+    #10b981,
+    #f59e0b,
+    #ef4444,
+    #a855f7,
+    #5f5cef
+  );
+  animation: borderSpin 4s linear infinite;
+  z-index: -2;
 }
+
+/* Máscara interior que deja visible solo el contorno */
+.hero-card::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  border-radius: 22px; /* 24px - 2px */
+  background: var(--surface);
+  z-index: -1;
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes borderSpin {
+  to { --border-angle: 360deg; }
+}
+
 .hero-label {
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -179,6 +215,8 @@ header {
   color: var(--muted);
   margin-bottom: 0.6rem;
   font-weight: 600;
+  position: relative;
+  z-index: 1;
 }
 .hero-total {
   font-size: 3.4rem;
@@ -187,35 +225,101 @@ header {
   line-height: 1;
   color: #ffffff;
   margin-bottom: 0.6rem;
+  position: relative;
+  z-index: 1;
 }
 .hero-sub {
   font-size: 0.9rem;
   color: var(--muted);
+  position: relative;
+  z-index: 1;
 }
 .hero-sub strong {
   color: #ffffff;
   font-weight: 600;
 }
 
-/* Next Payment Card - Widget */
+/* Powered by badge */
+.powered-badge {
+  margin-top: 1.2rem;
+  font-size: 0.65rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
+  opacity: 0.55;
+  transition: opacity 0.3s;
+}
+.hero-card:hover .powered-badge {
+  opacity: 0.85;
+}
+.powered-badge strong {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  animation: none !important;
+  font-weight: 600;
+}
+
 .next-card {
   display: flex;
   align-items: center;
   gap: 1.1rem;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 20px;
   padding: 1rem 1.25rem;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s, background-color 0.2s;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
 }
-.next-card:hover {
-  border-color: var(--border-light);
+
+/* Contorno animado giratorio — misma técnica, dirección opuesta */
+.next-card::before {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: 22px; /* 20px + 2px */
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    #5f5cef,
+    #06b6d4,
+    #5f5cef,
+    transparent 40%,
+    transparent 60%,
+    #5f5cef,
+    #06b6d4,
+    #5f5cef
+  );
+  animation: borderSpin 3s linear infinite;
+  z-index: -2;
+}
+
+/* Máscara interior */
+.next-card::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  border-radius: 18px; /* 20px - 2px */
+  background: var(--surface);
+  z-index: -1;
+  transition: background-color 0.2s;
+}
+
+.next-card:hover::after {
   background-color: var(--surface-hover);
 }
 .next-card:active {
   transform: scale(0.98);
+}
+.next-card:active::after {
   background-color: var(--surface-hover);
 }
 .next-icon-wrap {
@@ -520,16 +624,23 @@ body.modal-open .container {
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 1.5rem;
+  /* Perspectiva 3D para darle profundidad real al giro */
+  perspective: 1200px;
+  -webkit-perspective: 1200px;
+  /* Transición de SALIDA del overlay */
+  transition: opacity 0.3s ease-out;
 }
 
+/* Estado inactivo -> activo: solo el overlay se maneja con transición */
 .detail-overlay.active {
   opacity: 1;
   pointer-events: auto;
+  /* Transición de ENTRADA del overlay — acompaña el giro */
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Caja del modal con animación de zoom elástica (scale/pop) */
+/* Caja del modal con animación de GIRO 3D (flip card) */
 .detail-modal {
   background: var(--surface);
   border: 1px solid var(--border-light);
@@ -539,14 +650,38 @@ body.modal-open .container {
   padding: 2.2rem 1.6rem 1.8rem;
   position: relative;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
-  transform: scale(0.82) translateY(20px);
-  transition: transform 0.45s cubic-bezier(0.34, 1.6, 0.64, 1);
   display: flex;
   flex-direction: column;
+  
+  /* Estado inicial: girada, reducida y oculta */
+  transform: rotateY(-90deg) scale(0.88);
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  opacity: 0;
+  filter: brightness(0.7);
+  
+  /* Transición de SALIDA (cerrar) — rápida y fluida */
+  transition: transform 0.35s cubic-bezier(0.55, 0, 0.67, 0.52),
+              opacity 0.25s ease-out,
+              filter 0.3s ease-out,
+              box-shadow 0.35s ease-out;
 }
 
+/* Estado abierto: el giro llega a 0° con un overshoot elástico */
 .detail-overlay.active .detail-modal {
-  transform: scale(1) translateY(0);
+  transform: rotateY(0deg) scale(1);
+  opacity: 1;
+  filter: brightness(1);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6),
+              0 0 40px rgba(95, 92, 239, 0.08);
+  
+  /* Transición de ENTRADA (abrir) — elástica y detallada */
+  transition: transform 0.55s cubic-bezier(0.22, 1.4, 0.36, 1),
+              opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.55s cubic-bezier(0.22, 1.4, 0.36, 1);
 }
 
 /* Botón flotante para cerrar (esquina superior derecha) */
