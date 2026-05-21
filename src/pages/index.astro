@@ -6,105 +6,130 @@ import '../styles/global.css';
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mis Suscripciones</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sub/Track - Suscripciones</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
 
-<div class="blob blob1"></div>
-<div class="blob blob2"></div>
+<!-- Splash Screen -->
+<div class="splash" id="splashScreen">
+  <div class="splash-content">
+    <div class="splash-logo">sub<span>/</span>track</div>
+    <div class="splash-spinner">
+      <div class="splash-ring"></div>
+    </div>
+    <div class="splash-tagline">Cargando tus suscripciones…</div>
+  </div>
+</div>
 
-<div class="container">
+<div class="container" id="appContainer" style="opacity: 0;">
 
   <header>
-    <div>
-      <div class="logo">sub<span>/</span>track</div>
-      <div class="tagline">panel de suscripciones</div>
-    </div>
-    <div style="text-align:right; color: var(--muted); font-size:11px;" id="lastUpdate"></div>
+    <div class="logo">sub<span>/</span>track</div>
+    <div class="last-update" id="lastUpdate"></div>
   </header>
 
-  <!-- Stats -->
-  <div class="stats" id="statsBar"></div>
+  <!-- Hero Total -->
+  <div class="hero-card">
+    <div class="hero-label">Gasto Mensual</div>
+    <div class="hero-total" id="totalMonthly">$0</div>
+    <div class="hero-sub" id="totalAnnual">Proyección Anual: <strong>$0</strong></div>
+    <div class="powered-badge">Powered by <strong>Google Antigravity</strong></div>
+  </div>
 
-  <!-- Main grid -->
-  <div class="grid">
-    <!-- Left: subscription list -->
-    <div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Activas</span>
-          <span class="badge-count" id="subCount">0</span>
-        </div>
+  <!-- Próximo Cobro -->
+  <div class="next-card" id="nextCard">
+    <div class="next-icon-wrap" id="nextIcon"></div>
+    <div class="next-info">
+      <div class="next-info-label">Próximo Cobro</div>
+      <div class="next-info-title" id="nextName">—</div>
+    </div>
+    <div class="next-days">
+      <div class="next-days-val" id="nextDaysVal">—</div>
+      <div class="next-days-sub" id="nextDate">—</div>
+    </div>
+  </div>
 
-        <!-- Filter pills -->
-        <div class="cats" id="catPills"></div>
+  <!-- Filtros -->
+  <div class="cats-wrapper">
+    <div class="cats-scroll" id="catPills"></div>
+  </div>
 
-        <!-- Budget bar -->
-        <div style="padding: 0.75rem 1.25rem 0;">
-          <div class="budget-bar-wrap">
-            <div class="budget-label">
-              <span>Presupuesto mensual</span>
-              <span id="budgetPct">0%</span>
-            </div>
-            <div class="budget-bar"><div class="budget-fill" id="budgetFill" style="width:0%"></div></div>
-          </div>
-        </div>
+  <!-- Activas -->
+  <div class="sub-section">
+    <div class="section-header">
+      <div class="section-title">Tus Suscripciones</div>
+      <div class="sub-count" id="subCount">0</div>
+    </div>
+    <ul class="sub-list" id="subList"></ul>
+  </div>
 
-        <div class="card-body" style="padding-top: 0.5rem;">
-          <ul class="sub-list" id="subList"></ul>
-        </div>
+  <!-- Distribución (Dona) -->
+  <div class="chart-wrap">
+    <h3>Distribución por Categoría</h3>
+    <div style="height:200px;"><canvas id="chartDonut"></canvas></div>
+  </div>
+
+  <!-- Canceladas -->
+  <div class="sub-section" id="cancelledCard" style="display:none;">
+    <div class="cancelled-header" onclick="toggleCancelled()">
+      <div class="section-title">Canceladas</div>
+      <div class="sub-count" id="cancelledCount">0</div>
+    </div>
+    <div class="cancelled-body" id="cancelledBody">
+      <ul class="sub-list" id="cancelledList"></ul>
+    </div>
+  </div>
+
+  <div class="edit-hint">
+    Busca <strong>const SUBSCRIPTIONS</strong> en el script para agregar o editar suscripciones.<br>
+    Agrega <strong>cancelled: true</strong> para cancelar sin borrar.
+  </div>
+
+</div>
+
+<!-- Modal de Detalle (Subscription Detail) -->
+<div class="detail-overlay" id="detailOverlay" onclick="window.closeDetail(event)">
+  <div class="detail-modal" id="detailModal">
+    <button class="detail-close-btn" onclick="window.closeDetail(event)" aria-label="Cerrar modal">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    
+    <div class="detail-header">
+      <div class="detail-icon" id="detailIcon"></div>
+      <h2 class="detail-title" id="detailName">—</h2>
+      <span class="detail-category" id="detailCategory">—</span>
+    </div>
+    
+    <div class="detail-body">
+      <div class="detail-row">
+        <span class="detail-label">Costo</span>
+        <span class="detail-value highlight" id="detailPrice">—</span>
       </div>
-
-      <!-- Canceladas (se muestra solo si hay alguna) -->
-      <div class="card" id="cancelledCard" style="margin-top:1rem; display:none;">
-        <div class="card-header" style="cursor:pointer;" onclick="toggleCancelled()">
-          <span class="card-title">Canceladas</span>
-          <span class="badge-count" id="cancelledCount" style="background:var(--muted);">0</span>
-        </div>
-        <div class="card-body" id="cancelledBody" style="display:none;">
-          <ul class="sub-list" id="cancelledList"></ul>
-        </div>
+      <div class="detail-row">
+        <span class="detail-label">Ciclo de Facturación</span>
+        <span class="detail-value" id="detailCycle">—</span>
       </div>
-
-      <!-- Charts row -->
-      <div class="charts-row">
-        <div class="card">
-          <div class="card-header"><span class="card-title">Gasto mensual</span></div>
-          <div class="card-body">
-            <div class="chart-wrap" style="height:220px;"><canvas id="chartBar" role="img" aria-label="Gasto mensual por suscripción en barras">Gráfica de gastos mensuales</canvas></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Por categoría</span></div>
-          <div class="card-body">
-            <div class="chart-wrap" style="height:220px;"><canvas id="chartDonut" role="img" aria-label="Distribución por categoría en dona">Gráfica de categorías</canvas></div>
-          </div>
-        </div>
+      <div class="detail-row">
+        <span class="detail-label">Día de Cobro</span>
+        <span class="detail-value" id="detailDay">—</span>
       </div>
-
-      <div class="edit-hint">
-        <strong>Editar suscripciones:</strong> Busca <strong>const SUBSCRIPTIONS</strong> en el script. Usa <strong>billingDay</strong> para el día de cobro mensual — se recalcula solo cada mes. Para cancelar sin borrar agrega <strong>cancelled: true</strong>.
+      <div class="detail-row">
+        <span class="detail-label">Próximo Pago</span>
+        <span class="detail-value" id="detailNextDate">—</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Estado</span>
+        <span class="detail-value" id="detailStatus">—</span>
       </div>
     </div>
-
-    <!-- Right: upcoming + year chart -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Próximos cobros</span></div>
-        <div class="card-body">
-          <ul class="timeline" id="timeline"></ul>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><span class="card-title">Proyección anual</span></div>
-        <div class="card-body">
-          <div class="chart-wrap" style="height:200px;"><canvas id="chartYear" role="img" aria-label="Proyección de gastos mes a mes">Proyección anual</canvas></div>
-        </div>
-      </div>
+    
+    <div class="detail-footer">
+      <button class="detail-action-btn" onclick="window.closeDetail(event)">Cerrar</button>
     </div>
   </div>
 </div>
@@ -118,30 +143,14 @@ import '../styles/global.css';
      cycle      — "mensual" o "anual"
      category   — Categoría libre (para filtros y dona)
      billingDay — Día del mes en que te cobran (1-31)
-                  Se recalcula automáticamente cada mes.
-     emoji      — Ícono visual (un emoji)
      color      — Color del servicio en hex
      cancelled  — (opcional) true para marcar como cancelada
 ============================================================ */
-// ─────────────────────────────────────────────────────────────
-//  PARA AGREGAR, copia este bloque y pégalo separado por coma:
-//
-//  { name: "Nombre", price: 000, cycle: "mensual",
-//    category: "Streaming", billingDay: 15,
-//    emoji: "🎵", color: "#ff0000" },
-//
-//  Para cancelar sin borrar:
-//  { ..., cancelled: true },
-// ─────────────────────────────────────────────────────────────
 const SUBSCRIPTIONS = [
-  { name: "Netflix",         price: 299, cycle: "mensual", category: "Streaming", billingDay: 29, emoji: "🎬", color: "#e60914" },
-  { name: "YouTube Premium", price: 149, cycle: "mensual", category: "Streaming", billingDay: 30,  emoji: "▶️", color: "#ff0000" },
-  // Ejemplo de cancelada (descomenta para probar):
-  // { name: "Disney+", price: 199, cycle: "mensual", category: "Streaming", billingDay: 15, emoji: "🏰", color: "#1139a8", cancelled: true },
+  { name: "Netflix",         price: 299, cycle: "mensual", category: "Streaming", billingDay: 29, color: "#e50914" },
+  { name: "YouTube Premium", price: 149, cycle: "mensual", category: "Streaming", billingDay: 30, color: "#ff0000" },
+  { name: "Disney+",         price: 199, cycle: "mensual", category: "Streaming", billingDay: 15, color: "#1139a8", cancelled: true },
 ];
-
-/* Presupuesto mensual objetivo (para la barra) */
-const BUDGET_MONTHLY = 3000;
 
 /* ============================================================
    LÓGICA
@@ -149,11 +158,6 @@ const BUDGET_MONTHLY = 3000;
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-/**
- * Calcula la próxima fecha de cobro dado un día del mes.
- * Si ese día ya pasó este mes → salta al siguiente.
- * Maneja meses cortos (ej: día 31 en febrero → último día del mes).
- */
 function getNextBillingDate(billingDay) {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -199,7 +203,6 @@ function daysColor(d) {
   return "ok";
 }
 
-/* Mapa explícito nombre → clase CSS de logo */
 const LOGO_MAP = {
   "netflix":         "logo-netflix",
   "youtube premium": "logo-youtube",
@@ -212,7 +215,7 @@ const LOGO_MAP = {
 
 let activeCategory = "Todas";
 let cancelledOpen  = false;
-let chartBar, chartDonut, chartYear;
+let chartDonut;
 
 const activeSubs    = () => SUBSCRIPTIONS.filter(s => !s.cancelled);
 const cancelledSubs = () => SUBSCRIPTIONS.filter(s =>  s.cancelled);
@@ -226,31 +229,47 @@ function filteredSubs() {
   return activeCategory === "Todas" ? subs : subs.filter(s => s.category === activeCategory);
 }
 
-/* ── Stats bar ── */
-function renderStats() {
+/* ── Hero & Next Card ── */
+function renderHeroAndNext() {
   const subs = activeSubs();
-  const totalMonthly  = subs.reduce((a, s) => a + monthlyEquivalent(s), 0);
-  const totalAnnual   = subs.reduce((a, s) => a + annualEquivalent(s), 0);
-  const mostExpensive = [...subs].sort((a, b) => monthlyEquivalent(b) - monthlyEquivalent(a))[0];
+  const totalMonthly = subs.reduce((a, s) => a + monthlyEquivalent(s), 0);
+  const totalAnnual  = subs.reduce((a, s) => a + annualEquivalent(s), 0);
+
+  document.getElementById("totalMonthly").textContent = formatMXN(totalMonthly);
+  document.getElementById("totalAnnual").innerHTML = `Proyección Anual: <strong>${formatMXN(totalAnnual)}</strong>`;
 
   const withDays = subs.map(s => ({ ...s, next: getNextBillingDate(s.billingDay) }));
   const upcoming = [...withDays].sort((a, b) => a.next - b.next)[0];
 
-  const stats = [
-    { label: "Gasto mensual",  val: formatMXN(totalMonthly),      sub: "equivalente mensual",  cls: "accent" },
-    { label: "Gasto anual",    val: formatMXN(totalAnnual),        sub: "proyección 12 meses",  cls: "red"    },
-    { label: "Suscripciones",  val: subs.length,                   sub: "activas ahora",        cls: "green"  },
-    { label: "La más cara",    val: mostExpensive?.name ?? "—",    sub: mostExpensive ? formatMXN(monthlyEquivalent(mostExpensive)) + "/mes" : "", cls: "warn" },
-    { label: "Próximo cobro",  val: upcoming?.name ?? "—",         sub: upcoming ? `en ${daysBetween(today, upcoming.next)} días` : "", cls: "accent" },
-  ];
+  if (upcoming) {
+    const days = daysBetween(today, upcoming.next);
+    const dc = daysColor(days);
+    const logoClass = LOGO_MAP[upcoming.name.toLowerCase()] ?? "logo-default";
 
-  document.getElementById("statsBar").innerHTML = stats.map(s =>
-    `<div class="stat">
-      <div class="stat-label">${s.label}</div>
-      <div class="stat-val ${s.cls}">${s.val}</div>
-      <div class="stat-sub">${s.sub}</div>
-    </div>`
-  ).join("");
+    const nextIconEl = document.getElementById("nextIcon");
+    if (logoClass === 'logo-default') {
+      nextIconEl.innerHTML = `<span style="font-weight:700; color:${upcoming.color};">${upcoming.name[0]}</span>`;
+      nextIconEl.style.backgroundColor = upcoming.color + "18";
+      nextIconEl.style.borderColor = upcoming.color + "33";
+      nextIconEl.className = "next-icon-wrap";
+    } else {
+      nextIconEl.innerHTML = `<div class="logo-img ${logoClass}-img"></div>`;
+      nextIconEl.style.backgroundColor = "";
+      nextIconEl.style.borderColor = "";
+      nextIconEl.className = `next-icon-wrap logo-brand ${logoClass}`;
+    }
+    
+    document.getElementById("nextName").textContent = upcoming.name;
+    
+    const daysEl = document.getElementById("nextDaysVal");
+    daysEl.textContent = `${days} d`;
+    daysEl.className = `next-days-val ${dc}`;
+    
+    document.getElementById("nextDate").textContent = upcoming.next.toLocaleDateString("es-MX",{day:"2-digit",month:"short"});
+    document.getElementById("nextCard").onclick = () => window.openDetail(upcoming.name);
+  } else {
+    document.getElementById("nextCard").style.display = "none";
+  }
 }
 
 /* ── Category pills ── */
@@ -272,31 +291,41 @@ function renderSubList() {
   const subs = filteredSubs();
   document.getElementById("subCount").textContent = subs.length;
 
-  const totalMonthly = subs.reduce((a, s) => a + monthlyEquivalent(s), 0);
-  const pct = Math.min(100, Math.round(totalMonthly / BUDGET_MONTHLY * 100));
-  document.getElementById("budgetPct").textContent = pct + "%";
-  document.getElementById("budgetFill").style.width = pct + "%";
-
   document.getElementById("subList").innerHTML = subs.map((s, i) => {
     const next = getNextBillingDate(s.billingDay);
     const days = daysBetween(today, next);
     const dc   = daysColor(days);
     const logoClass = LOGO_MAP[s.name.toLowerCase()] ?? "logo-default";
 
+    let iconHTML = "";
+    let iconClass = "sub-icon";
+    let iconStyle = "";
+
+    if (logoClass === 'logo-default') {
+      iconHTML = `<span style="font-weight:700;">${s.name[0]}</span>`;
+      iconStyle = `background-color:${s.color}18; color:${s.color};`;
+      iconClass += " logo-default";
+    } else {
+      iconHTML = `<div class="logo-img ${logoClass}-img"></div>`;
+      iconClass += ` logo-brand ${logoClass}`;
+    }
+
     return `
-    <li class="sub-item" style="animation-delay:${i * 0.04}s">
-      <div class="sub-icon logo-icon ${logoClass}"></div>
+    <li class="sub-item" style="animation-delay:${i * 0.05}s" onclick="window.openDetail('${s.name}')">
+      <div class="${iconClass}" style="${iconStyle}">
+        ${iconHTML}
+      </div>
       <div>
         <div class="sub-name">${s.name}</div>
-        <div class="sub-meta">${s.category} · día ${s.billingDay}</div>
+        <div class="sub-meta">
+          <span class="next-days-val ${dc}" style="font-weight:600; font-size:0.8rem;">en ${days} d</span>
+          <span class="dot">•</span> 
+          ${next.toLocaleDateString("es-MX",{day:"2-digit",month:"short"})}
+        </div>
       </div>
-      <div style="text-align:right">
+      <div class="sub-price-wrap">
         <div class="sub-price">${formatMXN(s.price)}</div>
-        <div class="sub-cycle cycle-${s.cycle}">${s.cycle}</div>
-      </div>
-      <div class="sub-next" style="min-width:52px">
-        <div class="days ${dc}">${days}d</div>
-        <div style="color:var(--muted); font-size:10px;">${next.toLocaleDateString("es-MX",{day:"2-digit",month:"short"})}</div>
+        <div class="sub-cycle">${s.cycle}</div>
       </div>
     </li>`;
   }).join("");
@@ -316,18 +345,34 @@ function renderCancelled() {
 
   list.innerHTML = cancelled.map((s, i) => {
     const logoClass = LOGO_MAP[s.name.toLowerCase()] ?? "logo-default";
+    
+    let iconHTML = "";
+    let iconClass = "sub-icon";
+    let iconStyle = "";
+
+    if (logoClass === 'logo-default') {
+      iconHTML = `<span style="font-weight:700;">${s.name[0]}</span>`;
+      iconStyle = `background-color:${s.color}18; color:${s.color}; opacity:0.6;`;
+      iconClass += " logo-default";
+    } else {
+      iconHTML = `<div class="logo-img ${logoClass}-img"></div>`;
+      iconClass += ` logo-brand ${logoClass}`;
+      iconStyle = "opacity:0.6;";
+    }
+
     return `
-    <li class="sub-item" style="animation-delay:${i * 0.04}s; opacity:0.45; filter:grayscale(1);">
-      <div class="sub-icon logo-icon ${logoClass}"></div>
+    <li class="sub-item" style="animation-delay:${i * 0.03}s;" onclick="window.openDetail('${s.name}')">
+      <div class="${iconClass}" style="${iconStyle}">
+        ${iconHTML}
+      </div>
       <div>
-        <div class="sub-name" style="text-decoration:line-through;">${s.name}</div>
-        <div class="sub-meta">${s.category} · cancelada</div>
+        <div class="sub-name">${s.name}</div>
+        <div class="sub-meta">Cancelada</div>
       </div>
-      <div style="text-align:right">
+      <div class="sub-price-wrap">
         <div class="sub-price" style="color:var(--muted);">${formatMXN(s.price)}</div>
-        <div class="sub-cycle" style="background:rgba(107,107,138,0.15);color:var(--muted);">${s.cycle}</div>
+        <div class="sub-cycle">${s.cycle}</div>
       </div>
-      <div class="sub-next" style="min-width:52px; color:var(--muted); font-size:11px; text-align:right;">—</div>
     </li>`;
   }).join("");
 }
@@ -337,98 +382,32 @@ window.toggleCancelled = function() {
   document.getElementById("cancelledBody").style.display = cancelledOpen ? "block" : "none";
 };
 
-/* ── Timeline ── */
-function renderTimeline() {
-  const sorted = activeSubs()
-    .map(s => ({ ...s, next: getNextBillingDate(s.billingDay) }))
-    .sort((a, b) => a.next - b.next)
-    .slice(0, 8);
-
-  document.getElementById("timeline").innerHTML = sorted.map(s => {
-    const days = daysBetween(today, s.next);
-    const dc   = daysColor(days);
-    return `<li class="tl-item">
-      <div class="tl-dot" style="background:${s.color}; box-shadow:0 0 6px ${s.color}66;"></div>
-      <div class="tl-text">
-        <div class="tl-name">${s.name}</div>
-        <div class="tl-date">${s.next.toLocaleDateString("es-MX",{weekday:"short",day:"numeric",month:"short"})} · <span class="${dc}">en ${days} días</span></div>
-      </div>
-      <div class="tl-amt">${formatMXN(s.price)}</div>
-    </li>`;
-  }).join("");
-}
-
 /* ── Charts ── */
 function renderCharts() {
   const subs = filteredSubs();
-
-  const barLabels = subs.map(s => s.name);
-  const barData   = subs.map(s => Math.round(monthlyEquivalent(s)));
-  const barColors = subs.map(s => s.color + "cc");
-
-  if (chartBar) chartBar.destroy();
-  chartBar = new Chart(document.getElementById("chartBar"), {
-    type: "bar",
-    data: {
-      labels: barLabels,
-      datasets: [{
-        label: "Mensual", data: barData,
-        backgroundColor: barColors,
-        borderColor: barColors.map(c => c.slice(0,7)),
-        borderWidth: 1, borderRadius: 6, borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => formatMXN(ctx.raw) + "/mes" } } },
-      scales: {
-        x: { ticks: { color: "#6b6b8a", font: { size: 10, family: "'DM Mono'" }, maxRotation: 45, autoSkip: false }, grid: { display: false }, border: { color: "rgba(255,255,255,0.07)" } },
-        y: { ticks: { color: "#6b6b8a", font: { size: 10 }, callback: v => "$" + v.toLocaleString("es-MX") }, grid: { color: "rgba(255,255,255,0.05)" }, border: { display: false } }
-      }
-    }
-  });
-
   const catTotals = {};
   subs.forEach(s => { catTotals[s.category] = (catTotals[s.category] || 0) + monthlyEquivalent(s); });
-  const catColors = ["#7c5cfc","#43e8c8","#fc5c7d","#ffb347","#4fc3f7","#aed581","#f48fb1","#ce93d8","#80cbc4"];
+  
+  const catColors = ["#5f5cef", "#06b6d4", "#ef4444", "#10b981", "#f59e0b", "#a855f7", "#ec4899"];
 
   if (chartDonut) chartDonut.destroy();
   chartDonut = new Chart(document.getElementById("chartDonut"), {
     type: "doughnut",
     data: {
       labels: Object.keys(catTotals),
-      datasets: [{ data: Object.values(catTotals).map(v => Math.round(v)), backgroundColor: catColors, borderColor: "#111118", borderWidth: 3, hoverOffset: 8 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: "68%",
-      plugins: {
-        legend: { position: "right", labels: { color: "#6b6b8a", font: { size: 10, family: "'DM Mono'" }, boxWidth: 10, padding: 10 } },
-        tooltip: { callbacks: { label: ctx => ctx.label + ": " + formatMXN(ctx.raw) + "/mes" } }
-      }
-    }
-  });
-
-  const months   = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-  const yearData = months.map(() => Math.round(activeSubs().reduce((a, s) => a + monthlyEquivalent(s), 0)));
-
-  if (chartYear) chartYear.destroy();
-  chartYear = new Chart(document.getElementById("chartYear"), {
-    type: "line",
-    data: {
-      labels: months,
-      datasets: [{
-        label: "Proyección", data: yearData,
-        borderColor: "#7c5cfc", backgroundColor: "rgba(124,92,252,0.12)",
-        borderWidth: 2, pointBackgroundColor: "#b48aff",
-        pointRadius: 4, pointHoverRadius: 6, tension: 0.4, fill: true,
+      datasets: [{ 
+        data: Object.values(catTotals).map(v => Math.round(v)), 
+        backgroundColor: catColors, 
+        borderColor: "#101217", 
+        borderWidth: 2, 
+        hoverOffset: 4 
       }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => formatMXN(ctx.raw) } } },
-      scales: {
-        x: { ticks: { color: "#6b6b8a", font: { size: 10 } }, grid: { display: false }, border: { color: "rgba(255,255,255,0.07)" } },
-        y: { ticks: { color: "#6b6b8a", font: { size: 10 }, callback: v => "$" + v.toLocaleString("es-MX") }, grid: { color: "rgba(255,255,255,0.05)" }, border: { display: false } }
+      responsive: true, maintainAspectRatio: false, cutout: "75%",
+      plugins: {
+        legend: { position: "right", labels: { color: "#8b95a5", font: { size: 11, family: "'Outfit'" }, boxWidth: 10, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ctx.label + ": " + formatMXN(ctx.raw) + "/mes" } }
       }
     }
   });
@@ -436,17 +415,128 @@ function renderCharts() {
 
 function renderLastUpdate() {
   document.getElementById("lastUpdate").textContent =
-    "actualizado " + new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+    "Act. " + new Date().toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+}
+
+window.openDetail = function(name) {
+  const sub = SUBSCRIPTIONS.find(s => s.name.toLowerCase() === name.toLowerCase());
+  if (!sub) return;
+
+  const next = getNextBillingDate(sub.billingDay);
+  const days = daysBetween(today, next);
+  const dc   = daysColor(days);
+  const logoClass = LOGO_MAP[sub.name.toLowerCase()] ?? "logo-default";
+
+  // Cargar Icono
+  const iconEl = document.getElementById("detailIcon");
+  if (logoClass === 'logo-default') {
+    iconEl.innerHTML = `<span style="font-weight:700; color:${sub.color};">${sub.name[0]}</span>`;
+    iconEl.style.backgroundColor = sub.color + "18";
+    iconEl.style.borderColor = sub.color + "33";
+    iconEl.style.borderStyle = "solid";
+    iconEl.className = "detail-icon logo-default";
+  } else {
+    iconEl.innerHTML = `<div class="logo-img ${logoClass}-img" style="width: 36px; height: 36px;"></div>`;
+    iconEl.style.backgroundColor = "";
+    iconEl.style.borderColor = "";
+    iconEl.style.borderStyle = "";
+    iconEl.className = `detail-icon logo-brand ${logoClass}`;
+  }
+
+  document.getElementById("detailName").textContent = sub.name;
+  document.getElementById("detailCategory").textContent = sub.category;
+  document.getElementById("detailPrice").textContent = formatMXN(sub.price);
+  document.getElementById("detailCycle").textContent = sub.cycle.charAt(0).toUpperCase() + sub.cycle.slice(1);
+  document.getElementById("detailDay").textContent = `Día ${sub.billingDay}`;
+  
+  if (sub.cancelled) {
+    document.getElementById("detailNextDate").textContent = "N/A";
+    document.getElementById("detailStatus").innerHTML = `<span style="color:var(--danger); font-weight:700;">Cancelada</span>`;
+  } else {
+    document.getElementById("detailNextDate").innerHTML = `${next.toLocaleDateString("es-MX", {day:"numeric", month:"long", year:"numeric"})} <span class="${dc}" style="font-size: 0.85rem; font-weight:700; margin-left: 6px;">(en ${days} días)</span>`;
+    document.getElementById("detailStatus").innerHTML = `<span style="color:var(--success); font-weight:700;">Activa</span>`;
+  }
+
+  // Activar overlay y aplicar animaciones en body
+  document.body.classList.add("modal-open");
+  const overlay = document.getElementById("detailOverlay");
+  overlay.classList.add("active");
+};
+
+window.closeDetail = function(event) {
+  if (event) {
+    const isOverlay = event.target.id === "detailOverlay";
+    const isCloseBtn = event.target.closest(".detail-close-btn") || event.target.closest(".detail-action-btn");
+    if (!isOverlay && !isCloseBtn) return;
+  }
+  
+  const overlay = document.getElementById("detailOverlay");
+  overlay.classList.remove("active");
+  document.body.classList.remove("modal-open");
+};
+
+function dismissSplash() {
+  const splash = document.getElementById('splashScreen');
+  const app = document.getElementById('appContainer');
+  
+  // Fade out splash
+  splash.classList.add('splash-exit');
+  
+  // Fade in app container
+  setTimeout(() => {
+    app.style.transition = 'opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+    app.style.opacity = '1';
+  }, 300);
+  
+  // Remove splash from DOM after animation
+  setTimeout(() => {
+    splash.style.display = 'none';
+  }, 800);
+
+  // Trigger one-time shimmer hint on first sub-item after app is visible
+  setTimeout(() => {
+    triggerHintShimmer();
+  }, 1200);
+}
+
+function triggerHintShimmer() {
+  // Check if this hint has already been shown in this session
+  if (sessionStorage.getItem('subtrack_hint_shown')) return;
+  sessionStorage.setItem('subtrack_hint_shown', 'true');
+
+  const firstItem = document.querySelector('#subList .sub-item');
+  if (!firstItem) return;
+
+  // Add the shimmer hint class
+  firstItem.classList.add('hint-shimmer');
+
+  // Add a small floating tooltip
+  const tooltip = document.createElement('div');
+  tooltip.className = 'hint-tooltip';
+  tooltip.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 15l-2 5L9 9l11 4-5 2z"></path><path d="M14 14l5 5"></path></svg>
+    Toca para ver detalles
+  `;
+  firstItem.style.position = 'relative';
+  firstItem.appendChild(tooltip);
+
+  // Remove hint after animation completes
+  setTimeout(() => {
+    firstItem.classList.remove('hint-shimmer');
+    if (tooltip.parentNode) tooltip.remove();
+  }, 3500);
 }
 
 function init() {
-  renderStats();
+  renderHeroAndNext();
   renderCatPills();
   renderSubList();
   renderCancelled();
-  renderTimeline();
   renderCharts();
   renderLastUpdate();
+
+  // Dismiss splash after a minimum display time for polish
+  setTimeout(dismissSplash, 1200);
 }
 
 init();
