@@ -657,14 +657,14 @@ body.modal-open .container {
   flex-direction: column;
   z-index: 1;
   
-  /* Estado inicial: oculta y reducida */
-  transform: scale(0.88);
+  /* Estado inicial: oculta, más reducida y ligeramente más abajo para un pop-up suave */
+  transform: scale(0.75) translateY(20px);
   opacity: 0;
   
   /* Transición de SALIDA (cerrar) */
-  transition: transform 0.3s cubic-bezier(0.55, 0, 0.67, 0.52),
-              opacity 0.2s ease-out,
-              box-shadow 0.3s ease-out;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease-out,
+              box-shadow 0.35s ease-out;
 }
 
 /* Borde animado — Gradiente cónico con máscara para no tapar el fondo */
