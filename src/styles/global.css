@@ -640,16 +640,21 @@ body.modal-open .container {
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Caja del modal con animación de GIRO 3D (flip card) */
+/* Caja del modal con animación de GIRO 3D (flip card) y efecto LIQUID GLASS */
 .detail-modal {
-  background: var(--surface);
-  border: 1px solid var(--border-light);
+  background: rgba(18, 22, 36, 0.68) !important;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
   border-radius: 28px;
   width: 100%;
   max-width: 380px;
   padding: 2.2rem 1.6rem 1.8rem;
   position: relative;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+  overflow: hidden; /* Cortar el resplandor giratorio */
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+              inset 0 2px 10px rgba(255, 255, 255, 0.15);
   display: flex;
   flex-direction: column;
   
@@ -669,13 +674,40 @@ body.modal-open .container {
               box-shadow 0.35s ease-out;
 }
 
+/* Efecto Liquid Glass - Reflejo de luz giratorio muy lento en la capa superior */
+.detail-modal::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 120deg,
+    rgba(255, 255, 255, 0.15) 180deg,
+    rgba(95, 92, 239, 0.12) 200deg,
+    rgba(6, 182, 212, 0.12) 220deg,
+    transparent 250deg,
+    transparent 360deg
+  );
+  animation: liquidGlassSpin 16s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
 /* Estado abierto: el giro llega a 0° con un overshoot elástico */
 .detail-overlay.active .detail-modal {
   transform: rotateY(0deg) scale(1);
   opacity: 1;
   filter: brightness(1);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6),
-              0 0 40px rgba(95, 92, 239, 0.08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7),
+              inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+              inset 0 2px 12px rgba(255, 255, 255, 0.2),
+              0 0 45px rgba(95, 92, 239, 0.1);
   
   /* Transición de ENTRADA (abrir) — elástica y detallada */
   transition: transform 0.55s cubic-bezier(0.22, 1.4, 0.36, 1),
@@ -683,6 +715,7 @@ body.modal-open .container {
               filter 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.55s cubic-bezier(0.22, 1.4, 0.36, 1);
 }
+
 
 /* Botón flotante para cerrar (esquina superior derecha) */
 .detail-close-btn {
@@ -1021,5 +1054,14 @@ body.modal-open .container {
   100% {
     opacity: 0;
     transform: translateX(-50%) translateY(-6px) scale(0.9);
+  }
+}
+
+@keyframes liquidGlassSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
