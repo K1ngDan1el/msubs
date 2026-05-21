@@ -640,23 +640,20 @@ body.modal-open .container {
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Caja del modal con animación de GIRO 3D (flip card) y efecto LIQUID GLASS */
+/* Caja del modal con animación de GIRO 3D (flip card) y efecto LIQUID GLASS en el contorno */
 .detail-modal {
-  background: rgba(18, 22, 36, 0.68) !important;
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: transparent !important;
+  border: none !important;
   border-radius: 28px;
   width: 100%;
   max-width: 380px;
   padding: 2.2rem 1.6rem 1.8rem;
   position: relative;
-  overflow: hidden; /* Cortar el resplandor giratorio */
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8),
-              inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-              inset 0 2px 10px rgba(255, 255, 255, 0.15);
+  overflow: hidden; /* Cortar el resplandor giratorio del borde */
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
   display: flex;
   flex-direction: column;
+  z-index: 1;
   
   /* Estado inicial: girada, reducida y oculta */
   transform: rotateY(-90deg) scale(0.88);
@@ -674,29 +671,41 @@ body.modal-open .container {
               box-shadow 0.35s ease-out;
 }
 
-/* Efecto Liquid Glass - Reflejo de luz giratorio muy lento en la capa superior */
+/* Capa 1: Borde de Liquid Glass con destellos de luz lenta rotando por el contorno */
 .detail-modal::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
   background: conic-gradient(
-    from 0deg at 50% 50%,
-    transparent 0deg,
-    transparent 120deg,
-    rgba(255, 255, 255, 0.15) 180deg,
-    rgba(95, 92, 239, 0.12) 200deg,
-    rgba(6, 182, 212, 0.12) 220deg,
-    transparent 250deg,
+    from var(--border-angle, 0deg),
+    rgba(255, 255, 255, 0.85) 0deg,
+    rgba(95, 92, 239, 0.4) 20deg,
+    transparent 80deg,
+    transparent 180deg,
+    rgba(255, 255, 255, 0.85) 180deg,
+    rgba(6, 182, 212, 0.4) 200deg,
+    transparent 260deg,
     transparent 360deg
   );
-  animation: liquidGlassSpin 16s linear infinite;
+  animation: borderSpin 12s linear infinite;
   pointer-events: none;
-  z-index: 10;
-  mix-blend-mode: screen;
-  opacity: 0.85;
+  z-index: -2;
+}
+
+/* Capa 2: Panel de Vidrio Interno (Máscara del centro que revela el contorno de 1.5px) */
+.detail-modal::after {
+  content: '';
+  position: absolute;
+  top: 1.5px; left: 1.5px; right: 1.5px; bottom: 1.5px;
+  border-radius: 26.5px; /* 28px - 1.5px */
+  background: rgba(18, 22, 36, 0.76) !important;
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  box-shadow: inset 0 1px 8px rgba(255, 255, 255, 0.08),
+              inset 0 -1px 8px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Estado abierto: el giro llega a 0° con un overshoot elástico */
@@ -704,10 +713,8 @@ body.modal-open .container {
   transform: rotateY(0deg) scale(1);
   opacity: 1;
   filter: brightness(1);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7),
-              inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-              inset 0 2px 12px rgba(255, 255, 255, 0.2),
-              0 0 45px rgba(95, 92, 239, 0.1);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85),
+              0 0 50px rgba(95, 92, 239, 0.12);
   
   /* Transición de ENTRADA (abrir) — elástica y detallada */
   transition: transform 0.55s cubic-bezier(0.22, 1.4, 0.36, 1),
@@ -715,6 +722,7 @@ body.modal-open .container {
               filter 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.55s cubic-bezier(0.22, 1.4, 0.36, 1);
 }
+
 
 
 /* Botón flotante para cerrar (esquina superior derecha) */
