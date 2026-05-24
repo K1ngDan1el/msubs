@@ -158,7 +158,7 @@ header {
   text-align: center;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.04);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   /* Sin border nativo — el contorno animado lo reemplaza */
   border: none;
@@ -252,6 +252,7 @@ header {
   letter-spacing: -1.5px;
   line-height: 1;
   color: #ffffff;
+  text-shadow: 0 4px 25px rgba(255, 255, 255, 0.2);
   margin-bottom: 0.6rem;
   position: relative;
   z-index: 1;
@@ -410,9 +411,9 @@ header {
   text-align: center;
   line-height: 1;
 }
-.next-days-val.soon { color: var(--danger); text-shadow: 0 0 10px rgba(248, 113, 113, 0.4); }
-.next-days-val.ok { color: var(--success); text-shadow: 0 0 10px rgba(74, 222, 128, 0.4); }
-.next-days-val.mid { color: #fde047; text-shadow: 0 0 10px rgba(250, 204, 21, 0.4); }
+.next-days-val.soon { color: var(--danger); }
+.next-days-val.ok { color: var(--success); }
+.next-days-val.mid { color: #fde047; }
 
 .next-days-sub {
   font-size: 0.72rem;
