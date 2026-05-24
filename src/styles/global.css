@@ -177,25 +177,32 @@ header {
   background: linear-gradient(
     135deg,
     #222222 0%,
-    #888888 20%,
-    #ffffff 35%,
-    #0ea5e9 45%, /* minimal blue */
-    #0ea5e9 50%,
-    #444444 65%,
-    #ffffff 85%,
+    #888888 10%,
+    #ffffff 17%,
+    #0ea5e9 22%, /* minimal blue */
+    #0ea5e9 25%,
+    #444444 32%,
+    #ffffff 42%,
+    #222222 50%,
+    #888888 60%,
+    #ffffff 67%,
+    #0ea5e9 72%, /* minimal blue */
+    #0ea5e9 75%,
+    #444444 82%,
+    #ffffff 92%,
     #222222 100%
   );
-  background-size: 300% 300%;
-  animation: liquidMetalFlow 5s ease-in-out infinite alternate;
+  background-size: 200% 200%;
+  animation: liquidMetalFlow 4s linear infinite;
   z-index: -2;
 }
 
-/* Máscara interior que deja visible solo el contorno */
+/* Máscara interior que deja visible solo el contorno (más grueso hacia dentro) */
 .hero-card::after {
   content: '';
   position: absolute;
-  top: 2px; left: 2px; right: 2px; bottom: 2px;
-  border-radius: 22px; /* 24px - 2px */
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  border-radius: 20px; /* 24px - 4px */
   background: var(--surface);
   z-index: -1;
 }
@@ -278,7 +285,7 @@ header {
   z-index: 0;
 }
 
-/* Animación de metal líquido fluyendo */
+/* Animación de metal líquido fluyendo en una sola dirección */
 .next-card::before {
   content: '';
   position: absolute;
@@ -287,16 +294,23 @@ header {
   background: linear-gradient(
     135deg,
     #222222 0%,
-    #888888 20%,
-    #ffffff 35%,
-    #0ea5e9 45%, /* minimal blue */
-    #0ea5e9 50%,
-    #444444 65%,
-    #ffffff 85%,
+    #888888 10%,
+    #ffffff 17%,
+    #0ea5e9 22%, /* minimal blue */
+    #0ea5e9 25%,
+    #444444 32%,
+    #ffffff 42%,
+    #222222 50%,
+    #888888 60%,
+    #ffffff 67%,
+    #0ea5e9 72%, /* minimal blue */
+    #0ea5e9 75%,
+    #444444 82%,
+    #ffffff 92%,
     #222222 100%
   );
-  background-size: 300% 300%;
-  animation: liquidMetalFlow 4s ease-in-out infinite alternate;
+  background-size: 200% 200%;
+  animation: liquidMetalFlow 4s linear infinite;
   z-index: -2;
 }
 
