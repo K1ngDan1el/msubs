@@ -381,7 +381,7 @@ header {
   letter-spacing: 0.1em;
   font-weight: 800;
   margin-bottom: 4px;
-  background: linear-gradient(90deg, #7dd3fc, #a855f7);
+  background: linear-gradient(90deg, #ffffff, #7dd3fc, #9ca3af);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;

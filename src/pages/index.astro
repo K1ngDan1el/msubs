@@ -388,7 +388,7 @@ function renderCharts() {
   const catTotals = {};
   subs.forEach(s => { catTotals[s.category] = (catTotals[s.category] || 0) + monthlyEquivalent(s); });
   
-  const catColors = ["#5f5cef", "#06b6d4", "#ef4444", "#10b981", "#f59e0b", "#a855f7", "#ec4899"];
+  const catColors = ["#ffffff", "#bae6fd", "#7dd3fc", "#0ea5e9", "#d1d5db", "#9ca3af", "#4b5563"];
 
   if (chartDonut) chartDonut.destroy();
   chartDonut = new Chart(document.getElementById("chartDonut"), {
