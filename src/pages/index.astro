@@ -28,6 +28,17 @@ import '../styles/global.css';
 
 <div class="container" id="appContainer" style="opacity: 0;">
 
+  <!-- Floating Summary Header -->
+  <div class="floating-header" id="floatingHeader">
+    <div class="fh-left">
+      <div class="fh-label">Gasto Mensual</div>
+      <div class="fh-total" id="fhTotal">$0</div>
+    </div>
+    <div class="fh-right" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+    </div>
+  </div>
+
   <header>
     <div class="logo">sub<span>/</span>track</div>
     <div class="last-update" id="lastUpdate"></div>
@@ -237,6 +248,9 @@ function renderHeroAndNext() {
 
   document.getElementById("totalMonthly").textContent = formatMXN(totalMonthly);
   document.getElementById("totalAnnual").innerHTML = `Proyección Anual: <strong>${formatMXN(totalAnnual)}</strong>`;
+  
+  const fhTotal = document.getElementById("fhTotal");
+  if (fhTotal) fhTotal.textContent = formatMXN(totalMonthly);
 
   const withDays = subs.map(s => ({ ...s, next: getNextBillingDate(s.billingDay) }));
   const upcoming = [...withDays].sort((a, b) => a.next - b.next)[0];
@@ -537,6 +551,20 @@ function init() {
 
   // Dismiss splash after a minimum display time for polish
   setTimeout(dismissSplash, 1200);
+
+  // Floating header observer (prevents flickering)
+  const heroCard = document.querySelector('.hero-card');
+  const floatHeader = document.getElementById('floatingHeader');
+  if (heroCard && floatHeader) {
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) {
+        floatHeader.classList.add('visible');
+      } else {
+        floatHeader.classList.remove('visible');
+      }
+    }, { threshold: 0.1 });
+    observer.observe(heroCard);
+  }
 }
 
 init();
