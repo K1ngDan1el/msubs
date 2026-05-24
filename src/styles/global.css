@@ -392,26 +392,35 @@ header {
   letter-spacing: -0.3px;
 }
 .next-days {
-  text-align: right;
   background: rgba(0, 0, 0, 0.25);
   padding: 0.6rem 0.9rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.03);
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
 }
 .next-days-val {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
+  color: var(--warn);
+  text-align: center;
+  line-height: 1;
 }
-.next-days-val.soon { color: #fca5a5; text-shadow: 0 0 10px rgba(248, 113, 113, 0.4); }
-.next-days-val.ok { color: #86efac; text-shadow: 0 0 10px rgba(74, 222, 128, 0.4); }
+.next-days-val.soon { color: var(--danger); text-shadow: 0 0 10px rgba(248, 113, 113, 0.4); }
+.next-days-val.ok { color: var(--success); text-shadow: 0 0 10px rgba(74, 222, 128, 0.4); }
 .next-days-val.mid { color: #fde047; text-shadow: 0 0 10px rgba(250, 204, 21, 0.4); }
 
 .next-days-sub {
   font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.6);
-  margin-top: 2px;
+  margin-top: 4px;
   font-family: var(--mono);
+  text-align: center;
+  line-height: 1;
 }
 
 /* Category Filters - Pill Tabs */
