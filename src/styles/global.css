@@ -168,27 +168,25 @@ header {
   transform: scale(0.99);
 }
 
-/* Contorno animado giratorio — cromo con línea azul mínima */
+/* Animación de metal líquido fluyendo en diagonal — cromo con línea azul mínima */
 .hero-card::before {
   content: '';
   position: absolute;
   top: -2px; left: -2px; right: -2px; bottom: -2px;
   border-radius: 26px; /* 24px + 2px del offset */
-  background: conic-gradient(
-    from var(--border-angle, 0deg),
-    #888888 0deg,
-    #ffffff 45deg,
-    #444444 90deg,
-    #dddddd 135deg,
-    #0ea5e9 160deg,
-    #0ea5e9 170deg,
-    #444444 190deg,
-    #ffffff 240deg,
-    #888888 280deg,
-    #222222 320deg,
-    #888888 360deg
+  background: linear-gradient(
+    135deg,
+    #222222 0%,
+    #888888 20%,
+    #ffffff 35%,
+    #0ea5e9 45%, /* minimal blue */
+    #0ea5e9 50%,
+    #444444 65%,
+    #ffffff 85%,
+    #222222 100%
   );
-  animation: borderSpin 5s linear infinite;
+  background-size: 300% 300%;
+  animation: liquidMetalFlow 5s ease-in-out infinite alternate;
   z-index: -2;
 }
 
@@ -200,16 +198,6 @@ header {
   border-radius: 22px; /* 24px - 2px */
   background: var(--surface);
   z-index: -1;
-}
-
-@property --border-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes borderSpin {
-  to { --border-angle: 360deg; }
 }
 
 @keyframes liquidMetalFlow {
