@@ -660,8 +660,8 @@ body.modal-open .container {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  right: 0;
+  bottom: 0;
   z-index: 9999;
   background: rgba(4, 5, 7, 0.65);
   backdrop-filter: blur(14px);
@@ -704,13 +704,15 @@ body.modal-open .container {
   flex-direction: column;
   z-index: 1;
   
-  /* Estado inicial: oculta, más reducida y ligeramente más abajo para un pop-up suave */
-  transform: scale(0.75) translateY(20px);
+  /* Estado inicial: un poco más abajo, difuminado y sutilmente pequeño para un pop-up premium */
+  transform: scale(0.95) translateY(40px);
   opacity: 0;
+  filter: blur(8px);
   
   /* Transición de SALIDA (cerrar) */
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.25s ease-out,
+              filter 0.25s ease-out,
               box-shadow 0.35s ease-out;
 }
 
@@ -724,11 +726,11 @@ body.modal-open .container {
   background: conic-gradient(
     from var(--border-angle, 0deg),
     rgba(255, 255, 255, 0.9) 0deg,
-    rgba(95, 92, 239, 0.7) 20deg,
+    rgba(125, 211, 252, 0.7) 20deg, /* Soft sky blue */
     transparent 80deg,
     transparent 180deg,
     rgba(255, 255, 255, 0.9) 180deg,
-    rgba(6, 182, 212, 0.7) 200deg,
+    rgba(156, 163, 175, 0.7) 200deg, /* Silver gray */
     transparent 260deg,
     transparent 360deg
   );
@@ -742,17 +744,19 @@ body.modal-open .container {
   z-index: 10;
 }
 
-/* Estado abierto: zoom + fade con rebote suave (iOS style) */
+/* Estado abierto: fluido hacia arriba y sin desenfoque */
 .detail-overlay.active .detail-modal {
   transform: scale(1) translateY(0);
   opacity: 1;
+  filter: blur(0px);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85),
               inset 0 1px 0 rgba(255, 255, 255, 0.15),
-              0 0 50px rgba(95, 92, 239, 0.12);
+              0 0 50px rgba(125, 211, 252, 0.12); /* Subtle blue glow */
   
-  /* Transición de ENTRADA — super suave y elástica */
-  transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1),
-              opacity 0.35s ease-out,
+  /* Transición de ENTRADA — super suave y fluida */
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.4s ease-out,
+              filter 0.4s ease-out,
               box-shadow 0.65s ease-out;
 }
 
