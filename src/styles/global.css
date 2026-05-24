@@ -168,7 +168,7 @@ header {
   transform: scale(0.99);
 }
 
-/* Contorno animado giratorio — conic-gradient original */
+/* Contorno animado giratorio — cromo suave (metal líquido) */
 .hero-card::before {
   content: '';
   position: absolute;
@@ -176,24 +176,28 @@ header {
   border-radius: 26px; /* 24px + 2px del offset */
   background: conic-gradient(
     from var(--border-angle, 0deg),
-    #5f5cef,
-    #06b6d4,
-    #10b981,
-    #f59e0b,
-    #ef4444,
-    #a855f7,
-    #5f5cef
+    #9ca3af 0deg,
+    #ffffff 45deg,
+    #6b7280 90deg,
+    #e5e7eb 135deg,
+    #7dd3fc 160deg, /* azul suave */
+    #7dd3fc 170deg,
+    #6b7280 190deg,
+    #ffffff 240deg,
+    #9ca3af 280deg,
+    #4b5563 320deg, /* negro suave */
+    #9ca3af 360deg
   );
-  animation: borderSpin 4s linear infinite;
+  animation: borderSpin 5s linear infinite;
   z-index: -2;
 }
 
-/* Máscara interior que deja visible solo el contorno */
+/* Máscara interior que deja visible solo el contorno (grueso) */
 .hero-card::after {
   content: '';
   position: absolute;
-  top: 2px; left: 2px; right: 2px; bottom: 2px;
-  border-radius: 22px; /* 24px - 2px */
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  border-radius: 20px; /* 24px - 4px */
   background: var(--surface);
   z-index: -1;
 }
@@ -206,6 +210,11 @@ header {
 
 @keyframes borderSpin {
   to { --border-angle: 360deg; }
+}
+
+@keyframes liquidMetalFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
 .hero-label {
@@ -265,106 +274,105 @@ header {
   font-weight: 600;
 }
 
-/* FACELIFT: Tarjeta de Próximo Cobro Premium Glassmorphism */
 .next-card {
   display: flex;
   align-items: center;
   gap: 1.1rem;
-  background: linear-gradient(160deg, rgba(30, 34, 48, 0.7), rgba(18, 22, 36, 0.9));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 1.25rem 1.4rem;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s, border-color 0.3s;
+  background: var(--surface);
+  border: none;
+  border-radius: 20px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s;
   cursor: pointer;
   position: relative;
   overflow: hidden;
   z-index: 0;
-  margin-top: 0.5rem;
 }
 
-/* Efecto de destello (shine) que cruza la tarjeta */
+/* Animación de metal líquido fluyendo — cromo suave */
 .next-card::before {
   content: '';
   position: absolute;
-  top: 0; left: -100%;
-  width: 50%; height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-  transform: skewX(-20deg);
-  animation: shineSweep 6s infinite;
-  pointer-events: none;
-  z-index: 1;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: 22px; /* 20px + 2px */
+  background: linear-gradient(
+    115deg,
+    #4b5563 0%,   /* negro suave */
+    #9ca3af 20%,
+    #ffffff 35%,
+    #7dd3fc 45%, /* azul suave */
+    #7dd3fc 50%,
+    #6b7280 65%,
+    #ffffff 85%,
+    #4b5563 100%
+  );
+  background-size: 250% 250%;
+  animation: liquidMetalFlow 4s ease-in-out infinite alternate;
+  z-index: -2;
 }
 
-@keyframes shineSweep {
-  0% { left: -100%; }
-  20% { left: 200%; }
-  100% { left: 200%; }
+/* Máscara interior */
+.next-card::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  border-radius: 18px; /* 20px - 2px */
+  background: var(--surface);
+  z-index: -1;
+  transition: background-color 0.2s;
 }
 
-.next-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.15);
+.next-card:hover::after {
+  background-color: var(--surface-hover);
 }
 .next-card:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
-
+.next-card:active::after {
+  background-color: var(--surface-hover);
+}
 .next-icon-wrap {
-  width: 52px; height: 52px;
-  border-radius: 16px;
+  width: 46px; height: 46px;
+  border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 24px;
+  background: var(--border);
+  font-size: 22px;
   flex-shrink: 0;
-  box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.1), 0 4px 10px rgba(0,0,0,0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  z-index: 2;
+  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.05);
 }
 .next-info {
   flex: 1;
-  z-index: 2;
 }
 .next-info-label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 800;
-  margin-bottom: 4px;
-  background: linear-gradient(90deg, #0ea5e9, #a855f7);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-bottom: 2px;
 }
 .next-info-title {
-  font-size: 1.15rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: #ffffff;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
 }
 .next-days {
   text-align: right;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 0.6rem 0.9rem;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  z-index: 2;
 }
 .next-days-val {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
+  color: var(--warn);
 }
-.next-days-val.soon { color: #fca5a5; text-shadow: 0 0 10px rgba(248, 113, 113, 0.4); }
-.next-days-val.ok { color: #86efac; text-shadow: 0 0 10px rgba(74, 222, 128, 0.4); }
-.next-days-val.mid { color: #fde047; text-shadow: 0 0 10px rgba(250, 204, 21, 0.4); }
+.next-days-val.soon { color: var(--danger); }
+.next-days-val.ok { color: var(--success); }
 
 .next-days-sub {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 2px;
+  color: var(--muted);
+  margin-top: 1px;
   font-family: var(--mono);
 }
 
