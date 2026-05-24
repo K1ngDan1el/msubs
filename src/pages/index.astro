@@ -552,18 +552,22 @@ function init() {
   // Dismiss splash after a minimum display time for polish
   setTimeout(dismissSplash, 1200);
 
-  // Floating header observer (prevents flickering)
-  const heroCard = document.querySelector('.hero-card');
+  // Floating header observer (prevents flickering and overlapping)
+  let triggerTarget = document.getElementById('nextCard');
+  if (triggerTarget && triggerTarget.style.display === 'none') {
+    triggerTarget = document.querySelector('.hero-card');
+  }
+  
   const floatHeader = document.getElementById('floatingHeader');
-  if (heroCard && floatHeader) {
+  if (triggerTarget && floatHeader) {
     const observer = new IntersectionObserver((entries) => {
       if (!entries[0].isIntersecting) {
         floatHeader.classList.add('visible');
       } else {
         floatHeader.classList.remove('visible');
       }
-    }, { threshold: 0.1 });
-    observer.observe(heroCard);
+    }, { threshold: 0 });
+    observer.observe(triggerTarget);
   }
 }
 
